@@ -26,7 +26,8 @@ def main():
         ag_ratio = st.number_input("10. Albumin and Globulin Ratio", min_value=0.0, value=1.0, format="%.2f")
 
     if st.button("Predict"):
-        model_path = "models/liver_disease_model.joblib"
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(base_dir, "models", "liver_disease_model.joblib")
         if not os.path.exists(model_path):
             st.error("Trained model not found. Please run the training script first.")
             return

@@ -1,6 +1,13 @@
+# Machine Learning & Data Processing
 pandas==3.0.6
 numpy==2.3.5
 scikit-learn==1.8.0
-streamlit
 joblib==1.5.3
 ucimlrepo
+
+# Django Web Framework & Utilities
+django>=5.0,<6.0
+python-dotenv>=1.0.0
+
+# Streamlit Backup Interface
+streamlit

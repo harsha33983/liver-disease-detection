@@ -1,0 +1,253 @@
+{% extends "predictor/base.html" %}
+
+{% block title %}Model Architecture & Evaluation — LiverCare AI{% endblock %}
+{% block page_heading %}Machine Learning Pipeline & Evaluation{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-11">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h4 class="fw-bold mb-1" style="color: var(--primary-navy);">Model Architecture & Verified Metrics</h4>
+        <p class="text-muted small mb-0">Transparent review of the machine learning pipeline, statistical preprocessing, and reproducible evaluation benchmarks.</p>
+      </div>
+      <a href="{% url 'predictor:dashboard' %}" class="btn btn-sm btn-secondary-custom">
+        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+      </a>
+    </div>
+
+    <!-- Verified Performance Banner -->
+    {% if verified_metrics %}
+      <div class="card-premium mb-4">
+        <div class="card-header-clean bg-light">
+          <h5 class="card-title-clean">
+            <i class="bi bi-award-fill text-teal"></i> Verified Model Evaluation Benchmarks
+          </h5>
+          <span class="badge bg-success-subtle text-success border border-success-subtle">
+            <i class="bi bi-patch-check-fill me-1"></i> Reproducible via management command
+          </span>
+        </div>
+        <div class="card-body-clean">
+          <div class="row g-3 text-center mb-4">
+            <div class="col-6 col-md-3">
+              <div class="p-3 rounded bg-light border">
+                <div class="text-muted small text-uppercase fw-semibold">Test Accuracy</div>
+                <div class="fs-2 fw-bold text-navy">{{ verified_metrics.accuracy|floatformat:4 }}</div>
+                <div class="small text-muted">{{ verified_metrics.accuracy|floatformat:1 }}% on 20% holdout</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="p-3 rounded bg-light border">
+                <div class="text-muted small text-uppercase fw-semibold">Precision (Class 1)</div>
+                <div class="fs-2 fw-bold text-navy">{{ verified_metrics.precision|floatformat:4 }}</div>
+                <div class="small text-muted">True Positive / Pos. Calls</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="p-3 rounded bg-light border">
+                <div class="text-muted small text-uppercase fw-semibold">Recall (Sensitivity)</div>
+                <div class="fs-2 fw-bold text-navy">{{ verified_metrics.recall|floatformat:4 }}</div>
+                <div class="small text-muted">Disease identification rate</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="p-3 rounded bg-light border">
+                <div class="text-muted small text-uppercase fw-semibold">F1-Score</div>
+                <div class="fs-2 fw-bold text-navy">{{ verified_metrics.f1_score|floatformat:4 }}</div>
+                <div class="small text-muted">Harmonic mean P & R</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4">
+            <!-- Confusion Matrix Table -->
+            <div class="col-md-6">
+              <h6 class="fw-bold mb-2 text-navy">
+                <i class="bi bi-grid-3x3 text-teal me-1"></i> Confusion Matrix (Test Split n=117)
+              </h6>
+              <div class="table-responsive">
+                <table class="table table-bordered text-center align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th colspan="2" rowspan="2"></th>
+                      <th colspan="2">Predicted Class</th>
+                    </tr>
+                    <tr>
+                      <th class="small text-muted">Negative (0)</th>
+                      <th class="small text-muted">Positive (1)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th rowspan="2" class="table-light align-middle" style="width: 15%;">Actual Class</th>
+                      <th class="small text-muted">Negative (0)</th>
+                      <td class="bg-success-subtle fw-bold text-success fs-5">
+                        {{ verified_metrics.confusion_matrix.tn }}<br>
+                        <span class="small fw-normal text-muted" style="font-size: 0.7rem;">True Negative (TN)</span>
+                      </td>
+                      <td class="bg-danger-subtle fw-bold text-danger fs-5">
+                        {{ verified_metrics.confusion_matrix.fp }}<br>
+                        <span class="small fw-normal text-muted" style="font-size: 0.7rem;">False Positive (FP)</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th class="small text-muted">Positive (1)</th>
+                      <td class="bg-danger-subtle fw-bold text-danger fs-5">
+                        {{ verified_metrics.confusion_matrix.fn }}<br>
+                        <span class="small fw-normal text-muted" style="font-size: 0.7rem;">False Negative (FN)</span>
+                      </td>
+                      <td class="bg-success-subtle fw-bold text-success fs-5">
+                        {{ verified_metrics.confusion_matrix.tp }}<br>
+                        <span class="small fw-normal text-muted" style="font-size: 0.7rem;">True Positive (TP)</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="small text-muted mt-2">
+                Evaluated on 117 stratified test samples (34 negative, 83 positive).
+              </div>
+            </div>
+
+            <!-- 5-Fold Stratified Cross Validation -->
+            <div class="col-md-6">
+              <h6 class="fw-bold mb-2 text-navy">
+                <i class="bi bi-arrow-repeat text-teal me-1"></i> 5-Fold Stratified Cross Validation
+              </h6>
+              <div class="p-3 bg-light rounded border mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="text-muted small">Mean CV Accuracy:</span>
+                  <span class="fw-bold fs-5 text-navy">{{ verified_metrics.cv_mean_accuracy|floatformat:4 }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="text-muted small">CV Standard Deviation:</span>
+                  <span class="fw-bold text-muted">&plusmn; {{ verified_metrics.cv_std_accuracy|floatformat:4 }}</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                  <div class="progress-bar bg-teal" style="width: 86.7%;"></div>
+                </div>
+              </div>
+
+              <div class="small">
+                <strong>Individual Fold Accuracies:</strong>
+                <ul class="list-inline mb-0 mt-1">
+                  {% for fold_score in verified_metrics.cv_folds %}
+                    <li class="list-inline-item badge bg-white border text-dark me-1 mb-1">
+                      Fold {{ forloop.counter }}: {{ fold_score|floatformat:4 }}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Pipeline Architecture Details -->
+    <div class="card-premium mb-4">
+      <div class="card-header-clean">
+        <h5 class="card-title-clean">
+          <i class="bi bi-gear-wide-connected text-teal"></i> Pipeline Architecture & Preprocessing
+        </h5>
+        <span class="badge bg-light text-muted border">End-to-End scikit-learn Pipeline</span>
+      </div>
+      <div class="card-body-clean">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <h6 class="fw-bold text-navy mb-2">
+              <span class="badge bg-primary me-1">Step 1</span> Data Imputation & Scaling
+            </h6>
+            <div class="p-3 bg-light rounded border mb-3">
+              <div class="fw-bold small mb-1">{{ pipeline_info.imputation }}</div>
+              <p class="small text-muted mb-0">Missing values in biomarkers (such as <code>Albumin_and_Globulin_Ratio</code>) are imputed with median values calculated strictly from training splits to avoid target leakage.</p>
+            </div>
+            <div class="p-3 bg-light rounded border">
+              <div class="fw-bold small mb-1">{{ pipeline_info.scaling }}</div>
+              <p class="small text-muted mb-0">Features are standardized to zero mean and unit variance, ensuring gradient boosting and distance-sensitive boosting steps operate on commensurate numerical scales.</p>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <h6 class="fw-bold text-navy mb-2">
+              <span class="badge bg-primary me-1">Step 2</span> Statistical Feature Selection
+            </h6>
+            <div class="p-3 bg-light rounded border mb-3">
+              <div class="fw-bold small mb-1">{{ pipeline_info.feature_selection }}</div>
+              <p class="small text-muted mb-2">Estimates mutual information between laboratory features and the target label to identify the 8 most discriminative biomarkers.</p>
+              
+              <div class="small fw-semibold text-teal mb-1">Selected Features (k=8):</div>
+              <div class="d-flex flex-wrap gap-1 mb-2">
+                {% for feat in pipeline_info.selected_features %}
+                  <span class="badge bg-teal-subtle text-teal border border-teal-subtle">{{ feat }}</span>
+                {% endfor %}
+              </div>
+
+              <div class="small fw-semibold text-muted mb-1">Unselected Features:</div>
+              <div class="d-flex flex-wrap gap-1">
+                {% for feat in pipeline_info.unselected_features %}
+                  <span class="badge bg-light text-muted border">{{ feat }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="my-4">
+
+        <h6 class="fw-bold text-navy mb-3">
+          <span class="badge bg-primary me-1">Step 3</span> Ensemble Architecture (VotingClassifier)
+        </h6>
+        <div class="row g-3">
+          {% for sub in pipeline_info.sub_models %}
+            <div class="col-md-6">
+              <div class="p-3 bg-light rounded border h-100">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <h6 class="fw-bold text-navy mb-0">{{ sub.name }}</h6>
+                  <span class="badge bg-secondary">Estimator</span>
+                </div>
+                <div class="small font-monospace text-muted mb-2">{{ sub.hyperparameters }}</div>
+                <p class="small text-muted mb-0">{{ sub.description }}</p>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Reproducibility Command Card -->
+    <div class="card-premium mb-4">
+      <div class="card-header-clean">
+        <h5 class="card-title-clean">
+          <i class="bi bi-terminal-fill text-teal"></i> Reproducing Model Evaluation
+        </h5>
+        <span class="badge bg-light text-muted border">CLI Management Command</span>
+      </div>
+      <div class="card-body-clean">
+        <p class="small text-muted mb-2">
+          To re-verify and evaluate the model artifact against the local dataset using 5-fold cross-validation and stratified train/test partitioning, run the following Django command:
+        </p>
+        <div class="p-3 bg-dark text-white rounded font-monospace small">
+          python manage.py evaluate_model --save
+        </div>
+        <p class="small text-muted mt-2 mb-0">
+          This command executes cross-validation in memory, recalculates accuracy, precision, recall, F1, and the confusion matrix, and updates <code>data/evaluation_metrics.json</code> without retraining or altering the saved pipeline artifact.
+        </p>
+      </div>
+    </div>
+
+    <!-- Generalization & Clinical Disclaimer -->
+    <div class="alert alert-warning border d-flex gap-3 align-items-start mb-4">
+      <i class="bi bi-exclamation-triangle-fill fs-4 text-warning flex-shrink-0 mt-1"></i>
+      <div>
+        <h6 class="fw-bold mb-1">Important Scientific Limitation & Generalization Notice:</h6>
+        <p class="small mb-0">
+          Evaluation metrics reported on the UCI Indian Liver Patient Dataset (ILPD) reflect performance on this specific retrospective cohort. These metrics do not establish clinical efficacy, diagnostic reliability, or generalization to external patient populations or other clinical environments. This software is designed strictly for research and educational purposes.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

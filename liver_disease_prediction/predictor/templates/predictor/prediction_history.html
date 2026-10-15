@@ -1,0 +1,187 @@
+{% extends "predictor/base.html" %}
+
+{% block title %}Assessment History — LiverCare AI{% endblock %}
+{% block page_heading %}Clinical Assessment History{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+  <div>
+    <h4 class="fw-bold mb-1" style="color: var(--primary-navy);">Historical Assessment Records</h4>
+    <p class="text-muted small mb-0">Authorized clinical log of stored predictions and biomarker evaluations.</p>
+  </div>
+  <a href="{% url 'predictor:predict' %}" class="btn btn-teal-custom">
+    <i class="bi bi-plus-circle me-1"></i> New Assessment
+  </a>
+</div>
+
+<!-- History Filter Bar -->
+<div class="card-premium mb-4">
+  <div class="card-body-clean">
+    <form method="get" class="row g-3 align-items-center">
+      <!-- Search by ID -->
+      <div class="col-12 col-md-4">
+        <label for="id_search" class="form-label small text-muted">Search Assessment ID</label>
+        <div class="input-group">
+          <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+          <input type="text" name="search" id="id_search" class="form-control" placeholder="e.g. LC-A1B2C3D4" value="{{ query }}">
+        </div>
+      </div>
+
+      <!-- Filter by Class -->
+      <div class="col-6 col-md-3">
+        <label for="id_class" class="form-label small text-muted">Filter by Model Output</label>
+        <select name="class" id="id_class" class="form-select">
+          <option value="">-- All Classifications --</option>
+          <option value="1" {% if class_filter == '1' %}selected{% endif %}>Positive for Disease</option>
+          <option value="0" {% if class_filter == '0' %}selected{% endif %}>Negative (No Disease)</option>
+        </select>
+      </div>
+
+      <!-- Sort by Date -->
+      <div class="col-6 col-md-3">
+        <label for="id_sort" class="form-label small text-muted">Sort By</label>
+        <select name="sort" id="id_sort" class="form-select">
+          <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Date: Newest First</option>
+          <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Date: Oldest First</option>
+          <option value="-age" {% if sort_by == '-age' %}selected{% endif %}>Age: Highest First</option>
+          <option value="age" {% if sort_by == 'age' %}selected{% endif %}>Age: Lowest First</option>
+        </select>
+      </div>
+
+      <!-- Actions -->
+      <div class="col-12 col-md-2 d-flex gap-2 align-items-end" style="padding-top: 1.8rem;">
+        <button type="submit" class="btn btn-primary-custom w-100">
+          <i class="bi bi-funnel"></i> Apply
+        </button>
+        {% if query or class_filter or sort_by != '-created_at' %}
+          <a href="{% url 'predictor:prediction_history' %}" class="btn btn-outline-secondary" title="Clear Filters">
+            <i class="bi bi-x-circle"></i>
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Records Table -->
+<div class="card-premium mb-4">
+  <div class="card-header-clean">
+    <h5 class="card-title-clean">
+      <i class="bi bi-table text-teal"></i> Assessment Records ({{ total_count }})
+    </h5>
+    <div class="small text-muted">
+      Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table-custom">
+      <thead>
+        <tr>
+          <th>Reference ID</th>
+          <th>Timestamp</th>
+          <th>Patient</th>
+          <th>Total Bilirubin</th>
+          <th>Direct Bilirubin</th>
+          <th>ALP / ALT / AST</th>
+          <th>Classification</th>
+          <th>Estimated Score</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in page_obj %}
+          <tr>
+            <td>
+              <span class="font-monospace fw-bold text-primary">{{ item.assessment_id }}</span>
+            </td>
+            <td class="small text-muted">
+              {{ item.created_at|date:"Y-m-d H:i" }}
+            </td>
+            <td>
+              {{ item.age }} y / {{ item.gender }}
+            </td>
+            <td>{{ item.total_bilirubin }} mg/dL</td>
+            <td>{{ item.direct_bilirubin }} mg/dL</td>
+            <td class="small">
+              {{ item.alkaline_phosphotase }} / {{ item.alamine_aminotransferase }} / {{ item.aspartate_aminotransferase }}
+            </td>
+            <td>
+              {% if item.is_positive %}
+                <span class="badge-risk-positive">
+                  <i class="bi bi-exclamation-triangle-fill"></i> Positive
+                </span>
+              {% else %}
+                <span class="badge-risk-negative">
+                  <i class="bi bi-check-circle-fill"></i> Negative
+                </span>
+              {% endif %}
+            </td>
+            <td class="fw-semibold text-muted">
+              {{ item.confidence_display }}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'predictor:prediction_detail' item.assessment_id %}" class="btn btn-sm btn-outline-primary py-1 px-2" title="Details">
+                <i class="bi bi-eye"></i> Details
+              </a>
+              <a href="{% url 'predictor:prediction_detail' item.assessment_id %}?format=json" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Export JSON">
+                <i class="bi bi-download"></i> JSON
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="9" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-1 text-light d-block mb-2"></i>
+              No assessment records match the current filter criteria.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination Controls -->
+  {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center">
+      <div class="small text-muted">
+        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} assessments
+      </div>
+      <nav aria-label="Pagination Navigation">
+        <ul class="pagination pagination-sm mb-0">
+          {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&search={{ query }}{% endif %}{% if class_filter %}&class={{ class_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                &laquo; Prev
+              </a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo; Prev</span></li>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+              <li class="page-item active"><span class="page-link bg-teal border-teal">{{ num }}</span></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if query %}&search={{ query }}{% endif %}{% if class_filter %}&class={{ class_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                  {{ num }}
+                </a>
+              </li>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&search={{ query }}{% endif %}{% if class_filter %}&class={{ class_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                Next &raquo;
+              </a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

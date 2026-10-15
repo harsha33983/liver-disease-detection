@@ -1,0 +1,63 @@
+{
+  "dataset_name": "UCI Indian Liver Patient Dataset (ILPD)",
+  "total_samples": 583,
+  "train_samples": 466,
+  "test_samples": 117,
+  "accuracy": 0.8888888888888888,
+  "precision": 0.8804347826086957,
+  "recall": 0.9759036144578314,
+  "f1_score": 0.9257142857142857,
+  "cv_mean_accuracy": 0.8669412033859529,
+  "cv_std_accuracy": 0.022201197540474574,
+  "cv_folds": [
+    0.8723404255319149,
+    0.9032258064516129,
+    0.8494623655913979,
+    0.8709677419354839,
+    0.8387096774193549
+  ],
+  "confusion_matrix": {
+    "tn": 23,
+    "fp": 11,
+    "fn": 2,
+    "tp": 81,
+    "raw": [
+      [
+        23,
+        11
+      ],
+      [
+        2,
+        81
+      ]
+    ]
+  },
+  "classification_report": {
+    "0": {
+      "precision": 0.92,
+      "recall": 0.6764705882352942,
+      "f1-score": 0.7796610169491526,
+      "support": 34.0
+    },
+    "1": {
+      "precision": 0.8804347826086957,
+      "recall": 0.9759036144578314,
+      "f1-score": 0.9257142857142857,
+      "support": 83.0
+    },
+    "accuracy": 0.8888888888888888,
+    "macro avg": {
+      "precision": 0.9002173913043479,
+      "recall": 0.8261871013465627,
+      "f1-score": 0.8526876513317192,
+      "support": 117.0
+    },
+    "weighted avg": {
+      "precision": 0.8919323671497584,
+      "recall": 0.8888888888888888,
+      "f1-score": 0.8832714554748453,
+      "support": 117.0
+    }
+  },
+  "evaluated_at": "2026-10-15 08:41:59 UTC"
+}

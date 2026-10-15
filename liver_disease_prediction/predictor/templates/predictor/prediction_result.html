@@ -1,0 +1,218 @@
+{% extends "predictor/base.html" %}
+
+{% block title %}Assessment Result: {{ record.assessment_id }} — LiverCare AI{% endblock %}
+{% block page_heading %}Assessment Report{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-10">
+
+    <!-- Print Header (Visible only when printing) -->
+    <div class="d-none d-print-block mb-4 border-bottom pb-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="mb-0 fw-bold">LiverCare AI — Clinical Risk Assessment Report</h2>
+          <p class="text-muted small mb-0">Educational Decision Support System | Generated on {{ record.created_at|date:"F d, Y - H:i e" }}</p>
+        </div>
+        <div class="text-end">
+          <span class="badge bg-secondary">ID: {{ record.assessment_id }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Bar / Actions (Hidden on print) -->
+    <div class="d-flex align-items-center justify-content-between mb-3 no-print">
+      <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'predictor:predict' %}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i> New Assessment
+        </a>
+        <a href="{% url 'predictor:prediction_history' %}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-clock-history me-1"></i> All Assessments
+        </a>
+      </div>
+      <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-sm btn-secondary-custom">
+          <i class="bi bi-printer me-1"></i> Print Clinical Report
+        </button>
+        <a href="{% url 'predictor:predict' %}" class="btn btn-sm btn-teal-custom">
+          <i class="bi bi-plus-circle me-1"></i> Assess Another Patient
+        </a>
+      </div>
+    </div>
+
+    <!-- Outcome Banner -->
+    <div class="outcome-banner {% if record.is_positive %}positive{% else %}negative{% endif %} shadow-sm">
+      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div class="d-flex align-items-start gap-3">
+          <div class="fs-1">
+            {% if record.is_positive %}
+              <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+            {% else %}
+              <i class="bi bi-check-circle-fill text-success"></i>
+            {% endif %}
+          </div>
+          <div>
+            <div class="text-uppercase small fw-bold tracking-wider mb-1" style="letter-spacing: 0.05em;">
+              Model Inference Output
+            </div>
+            <h4 class="fw-bold mb-1">
+              {{ record.result_statement }}
+            </h4>
+            <div class="small opacity-75">
+              Reference ID: <strong>{{ record.assessment_id }}</strong> | Evaluated at: {{ record.created_at|date:"Y-m-d H:i:s" }} UTC
+            </div>
+          </div>
+        </div>
+
+        <div class="text-md-end p-2 bg-white rounded border">
+          <div class="small text-muted fw-semibold">Model-Estimated Score</div>
+          <div class="fs-3 fw-bold {% if record.is_positive %}text-danger{% else %}text-success{% endif %}">
+            {{ record.confidence_display }}
+          </div>
+          <div class="small text-muted">
+            {% if record.is_positive %}Class 1 (Disease){% else %}Class 0 (No Disease){% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Explanation of Result -->
+    <div class="card-premium mb-4">
+      <div class="card-header-clean">
+        <h5 class="card-title-clean">
+          <i class="bi bi-journal-text text-teal"></i> Understanding This Model Output
+        </h5>
+        <span class="badge bg-light text-muted border">Inference Rationale</span>
+      </div>
+      <div class="card-body-clean">
+        <p class="mb-2">
+          {% if record.is_positive %}
+            The soft-voting ensemble model combined individual decision estimates from the Gradient Boosting and AdaBoost classifiers to classify this profile as <strong>positive for the liver disease class</strong>. In the training dataset (UCI Indian Liver Patient Dataset), feature vectors presenting comparable distributions of elevated bilirubin ({{ record.total_bilirubin }} mg/dL), transaminases (ALT: {{ record.alamine_aminotransferase }} IU/L, AST: {{ record.aspartate_aminotransferase }} IU/L), or altered albumin/globulin ratios corresponded with clinically diagnosed liver conditions.
+          {% else %}
+            The soft-voting ensemble model evaluated the submitted clinical measurements and returned a <strong>negative classification for the liver disease class</strong>. The laboratory values (Total Bilirubin: {{ record.total_bilirubin }} mg/dL, ALP: {{ record.alkaline_phosphotase }} IU/L, ALT: {{ record.alamine_aminotransferase }} IU/L) aligned more closely with the non-disease cohort in the training dataset.
+          {% endif %}
+        </p>
+        <p class="small text-muted mb-0">
+          <strong>Probability Note:</strong> The estimated score ({{ record.confidence_display }}) is an uncalibrated soft-voting probability generated by the trained machine learning ensemble. It indicates algorithmic confidence relative to training patterns and does not represent an individualized diagnostic disease probability.
+        </p>
+      </div>
+    </div>
+
+    <!-- Submitted Clinical Measurements (10 Features) -->
+    <div class="card-premium mb-4">
+      <div class="card-header-clean">
+        <h5 class="card-title-clean">
+          <i class="bi bi-clipboard2-pulse text-teal"></i> Submitted Clinical Measurements
+        </h5>
+        <span class="badge bg-light text-dark border">10 Biomarkers</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Feature Category</th>
+              <th>Biomarker Name</th>
+              <th>Submitted Value</th>
+              <th>Unit</th>
+              <th>Model Input Field</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td rowspan="2" class="fw-semibold text-muted bg-light">Demographics</td>
+              <td>Age</td>
+              <td class="fw-bold">{{ record.age }}</td>
+              <td>years</td>
+              <td><code>Age</code></td>
+            </tr>
+            <tr>
+              <td>Gender</td>
+              <td class="fw-bold">{{ record.gender }}</td>
+              <td>Encoded ({{ record.gender|yesno:"1,0" }})</td>
+              <td><code>Gender</code></td>
+            </tr>
+            <tr>
+              <td rowspan="2" class="fw-semibold text-muted bg-light">Bilirubin</td>
+              <td>Total Bilirubin</td>
+              <td class="fw-bold">{{ record.total_bilirubin }}</td>
+              <td>mg/dL</td>
+              <td><code>Total_Bilirubin</code></td>
+            </tr>
+            <tr>
+              <td>Direct Bilirubin</td>
+              <td class="fw-bold">{{ record.direct_bilirubin }}</td>
+              <td>mg/dL</td>
+              <td><code>Direct_Bilirubin</code></td>
+            </tr>
+            <tr>
+              <td rowspan="3" class="fw-semibold text-muted bg-light">Liver Enzymes</td>
+              <td>Alkaline Phosphatase (ALP)</td>
+              <td class="fw-bold">{{ record.alkaline_phosphotase }}</td>
+              <td>IU/L</td>
+              <td><code>Alkaline_Phosphotase</code></td>
+            </tr>
+            <tr>
+              <td>Alamine Aminotransferase (ALT / SGPT)</td>
+              <td class="fw-bold">{{ record.alamine_aminotransferase }}</td>
+              <td>IU/L</td>
+              <td><code>Alamine_Aminotransferase</code></td>
+            </tr>
+            <tr>
+              <td>Aspartate Aminotransferase (AST / SGOT)</td>
+              <td class="fw-bold">{{ record.aspartate_aminotransferase }}</td>
+              <td>IU/L</td>
+              <td><code>Aspartate_Aminotransferase</code></td>
+            </tr>
+            <tr>
+              <td rowspan="3" class="fw-semibold text-muted bg-light">Proteins</td>
+              <td>Total Proteins</td>
+              <td class="fw-bold">{{ record.total_proteins }}</td>
+              <td>g/dL</td>
+              <td><code>Total_Proteins</code></td>
+            </tr>
+            <tr>
+              <td>Albumin</td>
+              <td class="fw-bold">{{ record.albumin }}</td>
+              <td>g/dL</td>
+              <td><code>Albumin</code></td>
+            </tr>
+            <tr>
+              <td>Albumin and Globulin Ratio</td>
+              <td class="fw-bold">{{ record.albumin_and_globulin_ratio }}</td>
+              <td>ratio</td>
+              <td><code>Albumin_and_Globulin_Ratio</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Model Metadata Card -->
+    <div class="card-premium mb-4">
+      <div class="card-header-clean">
+        <h5 class="card-title-clean">
+          <i class="bi bi-cpu text-teal"></i> Pipeline Execution Metadata
+        </h5>
+        <span class="badge bg-light text-muted border">Audit Trail</span>
+      </div>
+      <div class="card-body-clean">
+        <div class="row g-3 small">
+          <div class="col-sm-4">
+            <span class="text-muted d-block">Model Architecture:</span>
+            <strong>VotingClassifier (Soft Voting)</strong>
+          </div>
+          <div class="col-sm-4">
+            <span class="text-muted d-block">Feature Selector:</span>
+            <strong>SelectKBest (Mutual Info, k=8)</strong>
+          </div>
+          <div class="col-sm-4">
+            <span class="text-muted d-block">Artifact Version:</span>
+            <strong>{{ record.model_version }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

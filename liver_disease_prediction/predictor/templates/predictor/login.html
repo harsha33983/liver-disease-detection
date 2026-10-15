@@ -1,0 +1,76 @@
+{% extends "predictor/base.html" %}
+
+{% block title %}Clinician Login — LiverCare AI{% endblock %}
+{% block page_heading %}Clinician Authentication{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 60vh;">
+  <div class="col-12 col-sm-8 col-md-6 col-lg-5 col-xl-4">
+    <div class="card-premium">
+      <div class="card-header-clean text-center justify-content-center flex-column py-4">
+        <div class="brand-icon mb-2 mx-auto" style="width: 48px; height: 48px; font-size: 1.5rem;">
+          <i class="bi bi-shield-lock-fill"></i>
+        </div>
+        <h5 class="fw-bold text-navy mb-1">Clinical Staff Access</h5>
+        <p class="text-muted small mb-0">Sign in to access patient assessment history and audit logs.</p>
+      </div>
+
+      <div class="card-body-clean p-4">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ next }}">
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2 small mb-3">
+              {{ form.non_field_errors.0 }}
+            </div>
+          {% endif %}
+
+          <div class="mb-3">
+            <label for="id_username" class="form-label">Username</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white"><i class="bi bi-person"></i></span>
+              <input type="text" name="username" id="id_username" class="form-control" placeholder="Enter username" required autofocus>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="id_password" class="form-label">Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white"><i class="bi bi-key"></i></span>
+              <input type="password" name="password" id="id_password" class="form-control" placeholder="Enter password" required>
+            </div>
+          </div>
+
+          <div class="d-grid mb-3">
+            <button type="submit" class="btn btn-primary-custom justify-content-center">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+            </button>
+          </div>
+        </form>
+
+        <div class="text-center my-3 text-muted small position-relative">
+          <hr>
+          <span class="position-absolute top-50 start-50 translate-middle bg-white px-2">OR</span>
+        </div>
+
+        <!-- 1-Click Demo Clinician Access -->
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="demo_login" value="1">
+          <input type="hidden" name="next" value="{{ next }}">
+          <div class="d-grid">
+            <button type="submit" class="btn btn-teal-custom justify-content-center">
+              <i class="bi bi-person-badge-fill me-1"></i> 1-Click Clinician Demo Login
+            </button>
+          </div>
+        </form>
+
+        <div class="text-muted small text-center mt-3" style="font-size: 0.78rem;">
+          <i class="bi bi-info-circle me-1"></i> Educational demonstration portal. No real patient health records (PHI) are stored.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

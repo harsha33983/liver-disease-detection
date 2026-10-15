@@ -1,0 +1,114 @@
+{% extends "predictor/base.html" %}
+
+{% block title %}Assessment Detail: {{ record.assessment_id }} — LiverCare AI{% endblock %}
+{% block page_heading %}Individual Assessment Detail{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-10">
+
+    <!-- Action Toolbar (Hidden during print) -->
+    <div class="d-flex align-items-center justify-content-between mb-3 no-print">
+      <a href="{% url 'predictor:prediction_history' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back to History
+      </a>
+      <div class="d-flex gap-2">
+        <a href="{% url 'predictor:prediction_detail' record.assessment_id %}?format=json" class="btn btn-sm btn-outline-secondary" download="{{ record.assessment_id }}.json">
+          <i class="bi bi-download me-1"></i> Export JSON
+        </a>
+        <button onclick="window.print()" class="btn btn-sm btn-secondary-custom">
+          <i class="bi bi-printer me-1"></i> Print Report
+        </button>
+      </div>
+    </div>
+
+    <!-- Outcome Header Banner -->
+    <div class="outcome-banner {% if record.is_positive %}positive{% else %}negative{% endif %} shadow-sm">
+      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div>
+          <div class="small text-uppercase fw-bold mb-1">Assessment Reference: {{ record.assessment_id }}</div>
+          <h4 class="fw-bold mb-1">{{ record.result_statement }}</h4>
+          <div class="small opacity-75">Recorded on {{ record.created_at|date:"F d, Y - H:i:s" }} UTC</div>
+        </div>
+        <div class="bg-white p-3 rounded border text-md-end">
+          <div class="small text-muted fw-semibold">Model-Estimated Score</div>
+          <div class="fs-3 fw-bold {% if record.is_positive %}text-danger{% else %}text-success{% endif %}">
+            {{ record.confidence_display }}
+          </div>
+          <div class="small text-muted">{% if record.is_positive %}Class 1 (Liver Disease){% else %}Class 0 (No Disease){% endif %}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Biomarkers Table -->
+    <div class="card-premium mb-4">
+      <div class="card-header-clean">
+        <h5 class="card-title-clean">
+          <i class="bi bi-clipboard2-data text-teal"></i> Complete Biomarker Dataset
+        </h5>
+        <span class="badge bg-light text-muted border">Ten Laboratory Features</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Internal Feature Name</th>
+              <th>Clinical Label</th>
+              <th>Value Recorded</th>
+              <th>Units</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for key, item in features_dict.items %}
+              <tr>
+                <td><code>{{ key }}</code></td>
+                <td class="fw-semibold">{{ item.label }}</td>
+                <td class="fw-bold">{{ item.value }}</td>
+                <td class="text-muted">{{ item.unit|default:"—" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Audit Metadata -->
+    <div class="card-premium mb-4">
+      <div class="card-header-clean">
+        <h5 class="card-title-clean">
+          <i class="bi bi-shield-lock text-teal"></i> Record Metadata & Audit Details
+        </h5>
+      </div>
+      <div class="card-body-clean">
+        <div class="row g-3 small">
+          <div class="col-sm-4">
+            <span class="text-muted d-block">Assessment ID:</span>
+            <strong>{{ record.assessment_id }}</strong>
+          </div>
+          <div class="col-sm-4">
+            <span class="text-muted d-block">Creation Timestamp:</span>
+            <strong>{{ record.created_at|date:"Y-m-d H:i:s" }} UTC</strong>
+          </div>
+          <div class="col-sm-4">
+            <span class="text-muted d-block">Assigned Operator:</span>
+            <strong>{% if record.created_by %}{{ record.created_by.username }}{% else %}Anonymous Session{% endif %}</strong>
+          </div>
+          <div class="col-sm-4">
+            <span class="text-muted d-block">Model Artifact Identifier:</span>
+            <strong>{{ record.model_version }}</strong>
+          </div>
+          <div class="col-sm-4">
+            <span class="text-muted d-block">Disease Probability Score:</span>
+            <strong>{% if record.probability_disease %}{{ record.probability_disease|floatformat:4 }}{% else %}N/A{% endif %}</strong>
+          </div>
+          <div class="col-sm-4">
+            <span class="text-muted d-block">No-Disease Probability Score:</span>
+            <strong>{% if record.probability_no_disease %}{{ record.probability_no_disease|floatformat:4 }}{% else %}N/A{% endif %}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

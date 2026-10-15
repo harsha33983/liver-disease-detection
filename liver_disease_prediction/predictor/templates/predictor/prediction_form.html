@@ -1,0 +1,209 @@
+{% extends "predictor/base.html" %}
+
+{% block title %}Liver Disease Risk Assessment — LiverCare AI{% endblock %}
+{% block page_heading %}New Liver Disease Risk Assessment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-10">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div>
+        <h4 class="fw-bold mb-1" style="color: var(--primary-navy);">Clinical Assessment Form</h4>
+        <p class="text-muted small mb-0">Enter the ten patient biomarkers to evaluate risk via the trained VotingClassifier pipeline.</p>
+      </div>
+      <a href="{% url 'predictor:dashboard' %}" class="btn btn-sm btn-secondary-custom">
+        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+      </a>
+    </div>
+
+    {% if not model_available %}
+      <div class="alert alert-warning border d-flex align-items-center gap-2 mb-4">
+        <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+        <div>
+          <strong>Model File Check:</strong> The pipeline artifact <code>models/liver_disease_model.joblib</code> could not be located at the expected system path. Submissions may fail until the model artifact is verified.
+        </div>
+      </div>
+    {% endif %}
+
+    <form method="post" id="prediction-form" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <h6 class="fw-bold"><i class="bi bi-exclamation-circle-fill me-1"></i> Form Validation Errors:</h6>
+          <ul class="mb-0 ps-3">
+            {% for error in form.non_field_errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endif %}
+
+      <!-- Section 1: Patient Information -->
+      <div class="form-section-card">
+        <div class="form-section-header">
+          <span class="section-badge">1</span>
+          <h5>Patient Demographics</h5>
+        </div>
+        <div class="form-section-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="{{ form.Age.id_for_label }}" class="form-label">
+                {{ form.Age.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.Age }}
+              {% if form.Age.errors %}
+                <div class="text-danger small mt-1">{{ form.Age.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">{{ form.Age.help_text }}</div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="{{ form.Gender.id_for_label }}" class="form-label">
+                {{ form.Gender.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.Gender }}
+              {% if form.Gender.errors %}
+                <div class="text-danger small mt-1">{{ form.Gender.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">{{ form.Gender.help_text }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Bilirubin Measurements -->
+      <div class="form-section-card">
+        <div class="form-section-header">
+          <span class="section-badge">2</span>
+          <h5>Bilirubin Measurements</h5>
+        </div>
+        <div class="form-section-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="{{ form.Total_Bilirubin.id_for_label }}" class="form-label">
+                {{ form.Total_Bilirubin.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.Total_Bilirubin }}
+              {% if form.Total_Bilirubin.errors %}
+                <div class="text-danger small mt-1">{{ form.Total_Bilirubin.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">{{ form.Total_Bilirubin.help_text }}</div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="{{ form.Direct_Bilirubin.id_for_label }}" class="form-label">
+                {{ form.Direct_Bilirubin.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.Direct_Bilirubin }}
+              {% if form.Direct_Bilirubin.errors %}
+                <div class="text-danger small mt-1">{{ form.Direct_Bilirubin.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">{{ form.Direct_Bilirubin.help_text }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Liver Enzyme Measurements -->
+      <div class="form-section-card">
+        <div class="form-section-header">
+          <span class="section-badge">3</span>
+          <h5>Liver Enzyme Measurements</h5>
+        </div>
+        <div class="form-section-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label for="{{ form.Alkaline_Phosphotase.id_for_label }}" class="form-label">
+                {{ form.Alkaline_Phosphotase.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.Alkaline_Phosphotase }}
+              {% if form.Alkaline_Phosphotase.errors %}
+                <div class="text-danger small mt-1">{{ form.Alkaline_Phosphotase.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">{{ form.Alkaline_Phosphotase.help_text }}</div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="{{ form.Alamine_Aminotransferase.id_for_label }}" class="form-label">
+                {{ form.Alamine_Aminotransferase.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.Alamine_Aminotransferase }}
+              {% if form.Alamine_Aminotransferase.errors %}
+                <div class="text-danger small mt-1">{{ form.Alamine_Aminotransferase.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">{{ form.Alamine_Aminotransferase.help_text }}</div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="{{ form.Aspartate_Aminotransferase.id_for_label }}" class="form-label">
+                {{ form.Aspartate_Aminotransferase.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.Aspartate_Aminotransferase }}
+              {% if form.Aspartate_Aminotransferase.errors %}
+                <div class="text-danger small mt-1">{{ form.Aspartate_Aminotransferase.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">{{ form.Aspartate_Aminotransferase.help_text }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Protein Measurements -->
+      <div class="form-section-card">
+        <div class="form-section-header">
+          <span class="section-badge">4</span>
+          <h5>Protein Concentrations</h5>
+        </div>
+        <div class="form-section-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label for="{{ form.Total_Proteins.id_for_label }}" class="form-label">
+                {{ form.Total_Proteins.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.Total_Proteins }}
+              {% if form.Total_Proteins.errors %}
+                <div class="text-danger small mt-1">{{ form.Total_Proteins.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">{{ form.Total_Proteins.help_text }}</div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="{{ form.Albumin.id_for_label }}" class="form-label">
+                {{ form.Albumin.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.Albumin }}
+              {% if form.Albumin.errors %}
+                <div class="text-danger small mt-1">{{ form.Albumin.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">{{ form.Albumin.help_text }}</div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="{{ form.Albumin_and_Globulin_Ratio.id_for_label }}" class="form-label">
+                {{ form.Albumin_and_Globulin_Ratio.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.Albumin_and_Globulin_Ratio }}
+              {% if form.Albumin_and_Globulin_Ratio.errors %}
+                <div class="text-danger small mt-1">{{ form.Albumin_and_Globulin_Ratio.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">{{ form.Albumin_and_Globulin_Ratio.help_text }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex align-items-center justify-content-between p-3 rounded card-premium mb-4">
+        <button type="button" id="btn-reset-form" class="btn btn-secondary-custom">
+          <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Form
+        </button>
+        <button type="submit" id="btn-submit-prediction" class="btn btn-teal-custom px-4 py-2 fs-6">
+          <i class="bi bi-clipboard2-check me-2"></i> Submit Assessment & Predict
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
